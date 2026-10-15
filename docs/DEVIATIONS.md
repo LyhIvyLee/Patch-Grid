@@ -5,8 +5,8 @@
 ## 官方代码基线
 
 - 来源：https://github.com/Carrie-lin/Patch-Grid
-- 克隆日期：待 Phase 1 克隆后填写
-- commit 哈希：待 Phase 1 克隆后填写
+- 克隆日期：2026-10-15（以 tarball 方式获取，等效于克隆后移除 .git）
+- commit 哈希：cdd97d9ecf063ff58087f1ba1da38f21e4b14935（main 分支 HEAD）
 
 ## 差异清单
 

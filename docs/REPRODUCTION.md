@@ -66,11 +66,13 @@ python train.py --dataset_path data/train/00000006_0 --exp_name smoke_00000006_0
 # 同时另开终端 nvidia-smi 监控显存；关注：数据采样耗时、单迭代显存峰值、_results/models/smoke_00000006_0.pth 落盘
 ```
 
-### 5. 训练 Patch-Grid（固定预训练解码器）【未开始】
+### 5. 训练 Patch-Grid（固定预训练解码器）【已完成 2026-10-15】
 
 ```bash
-python train.py --dataset_path data/train/00000006_0 --exp_name 00000006_0 --pretrained _results/shape_space/decoder_1.pth --fix_decoder --use_shape_space
+python train.py --dataset_path data/train/00000006_0 --exp_name 00000006_0_ss --pretrained _results/shape_space/decoder_1.pth --fix_decoder --use_shape_space
 ```
+
+- 结果：301 iters / 13.4s；损失 patch 57.9→0.242；`_results/models/00000006_0_ss.pth`（648,705 参数）。
 
 ### 6. 训练 Patch-Grid-TS（从头训练）【未开始】
 
@@ -78,18 +80,23 @@ python train.py --dataset_path data/train/00000006_0 --exp_name 00000006_0 --pre
 python train.py --dataset_path data/train/00000006_0 --exp_name 00000006_0 --epochs 500 --mile_stone 470 485
 ```
 
-### 7. 网格抽取【未开始】
+### 7. 网格抽取【已完成 2026-10-15，含资源适配】
 
 ```bash
-python extract.py --pretrained _results/models/00000006_0.pth --mesh_path_prefix _results/mesh --exp_name 00000006_0 --dataset_path data/train/00000006_0
+python extract.py --pretrained _results/models/00000006_0_ss.pth --mesh_path_prefix _results/mesh --exp_name 00000006_0_ss --dataset_path data/train/00000006_0 --extract_batch_size 50000 --extract_resolution 1024
 ```
 
-### 8. 指标评估【未开始】
+- 适配说明（零代码修改）：默认 `--extract_batch_size` 80 万在 6GB GPU OOM → 5 万；默认分辨率 2^11 的 CPU 拼接导致 15GB RAM OOM → 2^10。本机后续形状提取沿用此参数。
+- 输出：`_results/mesh/00000006_0_ss_composed_all.obj`（142MB / 347 万面 / 包围盒与 GT 偏差 ≤0.001）。
+
+### 8. 指标评估【mesh_metrics 已完成 2026-10-15；field_metrics 未开始】
 
 ```bash
-python metrics/mesh_metrics.py --gt_path data/train/00000006_0/00000006_0.obj --recon_path _results/mesh/00000006_0_composed_all.obj --metrics_file metrics.txt
-python metrics/field_metrics.py --local_path _results/models/00000006_0.pth --dataset_path data/train/00000006_0 --field_metrics_file metrics_field.txt
+python metrics/mesh_metrics.py --gt_path data/train/00000006_0/00000006_0.obj --recon_path _results/mesh/00000006_0_ss_composed_all.obj --metrics_file _results/metrics_00000006_0_ss.txt
 ```
+
+- 结果（原文）：cd 7.198e-05 / hd 8.499e-04 / iou 0.99904 / nc 0.99920 / f_score 100.0。
+- 注意：metrics 需要 `rtree==0.9.7`（yaml 钉子）；field_metrics 需先修补官方 import 缺陷（见「官方代码既存缺陷」第 2 条）。
 
 ### 9. 形状更新（shape updating）【未开始】
 

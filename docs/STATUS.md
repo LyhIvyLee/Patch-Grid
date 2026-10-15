@@ -4,25 +4,26 @@
 
 ## 当前阶段
 
-Phase 1 复现：S1（代码与环境检查）与 S2（环境搭建）已完成，S3（数据与最小实验）阻塞于官方数据下载。
+Phase 1 复现：**首要目标已达成**——00000006_0 官方测试模型在本机完成拟合并生成重建 Mesh，官方 mesh 指标质量优秀。
 
 ## 已完成
 
-- 2026-10-15 S1：官方代码纳入 patch-grid/（基线 cdd97d9）；数据格式/训练循环/提取/评估流程静态分析（见 REPRODUCTION.md）；兼容性风险清单。
-- 2026-10-15 S2：conda env `patchgrid` 搭建完成；torch 1.10.1+cu111 GPU 验证通过；mesh2sdf CUDA 扩展本地编译并数值验证；官方主链路 import 全通过。
-- 2026-10-15 本地 Git 提交 4 个（docs×2 / repro×1 / env×1），未推送（无远程）。
+- 2026-10-15 S1：官方代码纳入 patch-grid/（基线 cdd97d9）；全流程静态分析；兼容性风险清单。
+- 2026-10-15 S2：conda env `patchgrid` 搭建完成；torch 1.10.1+cu111 GPU 验证；mesh2sdf 扩展编译并数值验证；主链路 import 全通过。
+- 2026-10-15 S3：数据就位（用户手动下载）→ 冒烟测试通过 → 正式拟合（301 epochs / 13.4s）→ 提取重建 OBJ（142MB / 347 万面 / 包围盒对齐 ≤0.001）→ GT 对比渲染图 → mesh_metrics 全指标产出。
+- 2026-10-15 S4：文档更新 + 提交推送。
 
 ## 已验证的结论
 
-- RTX 4050（sm_89）可运行 cu111 构建：torch matmul/autograd 与 mesh2sdf kernel（sm_86 cubin）均实测正确。
-- mesh2sdf 扩展编译配方：conda cuda-toolkit 11.8 + gcc 11 + TORCH_CUDA_ARCH_LIST=8.6（torch 1.10 架构表不识别 8.9）。
-- 官方 import 链（utils/trainer/dataset/torchgp）与 extract 依赖（open3d/skimage lewiner MC）在本环境全部通过。
-- OneDrive 官方数据无法编程下载（匿名 API unauthenticated，实测）。
-- 本机硬件基线见 docs/ENVIRONMENT.md（6GB 显存为训练规模硬约束）。
+- **00000006_0 拟合指标**（`patch-grid/_results/metrics_00000006_0_ss.txt`）：CD 7.20e-05、HD 8.50e-04、IoU 0.9990、NC 0.9992、F-score 100.0（τ=0.001）。数量级合理（与论文中 Patch-Grid 报告的水平一致；精确表格对照待精读论文后补充到 REPRODUCTION.md）。
+- 训练默认配置在 6GB GPU 上余量充足（显存 ~2.7GB 峰值在提取阶段；训练阶段 <1GB）。
+- 提取阶段两次资源适配均为官方参数旋钮、零代码修改：`--extract_batch_size 50000`（GPU OOM）与 `--extract_resolution 1024`（系统 RAM OOM，15GB 全局内存限制，2048 时拼接阶段 734MB 分块载入膨胀导致 VSCode 被 OOM killer 杀死——即 17:31 会话闪退原因）。
+- RTX 4050（sm_89）可运行 cu111 构建；mesh2sdf sm_86 编译配方有效。
+- OneDrive 官方数据无法编程下载（已由用户手动完成）。
 
 ## 进行中
 
-- 等待用户从官方 OneDrive 手动下载数据（见「阻塞问题」）。
+- （无）
 
 ## 研究假设
 
@@ -30,11 +31,12 @@ Phase 1 复现：S1（代码与环境检查）与 S2（环境搭建）已完成�
 
 ## 阻塞问题
 
-- 【阻塞 S3】官方 OneDrive 数据需浏览器手动下载：`data/train`（3 形状）→ 放 `patch-grid/data/train/`；`shape_space/checkpoints`（decoder_1.pth 等）→ 放 `patch-grid/_results/shape_space/`。下载链接见官方 README。
+- （无）
 
 ## 下一步计划
 
-1. 用户下载数据并放置到位（唯一阻塞）。
-2. 冒烟测试（命令见 REPRODUCTION.md 4a）：--epochs 2 验证采样/前向/反向/存盘 + 显存监控。
-3. 显存与耗时允许 → 正式拟合 00000006_0（默认 300 epochs）→ extract → `_results/mesh/00000006_0_ss_composed_all.obj`。
-4. 可行则跑 mesh_metrics（field_metrics 需先修补官方 import 缺陷并编译 sol_nglod，登记 DEVIATIONS 后再做）。
+1. 其余两个官方形状（00000008_0、00000089_1）同流程拟合+提取+指标，验证稳定性。
+2. Patch-Grid-TS 从头训练路径（--epochs 500）至少跑通一次。
+3. field_metrics：需先修补官方 `from option import parse_options` 缺陷（登记 DEVIATIONS）并评估是否编译 sol_nglod。
+4. 精读论文补充数值对照表（当前仅数量级合理性判断）。
+5. shape updating 流程（需下载 data/edit 数据）。

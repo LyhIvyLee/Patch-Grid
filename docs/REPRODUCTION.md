@@ -22,30 +22,49 @@
 
 ## 步骤清单
 
-### 1. 获取官方代码【未开始】
+### 1. 获取官方代码【已完成 2026-10-15】
 
-- 克隆 https://github.com/Carrie-lin/Patch-Grid 到 patch-grid/，记录官方 commit 哈希到 docs/DEVIATIONS.md 基线信息。
+- tarball 方式获取 main@cdd97d9 → patch-grid/，基线已登记 docs/DEVIATIONS.md。
 
-### 2. 创建环境【未开始】
+### 2. 创建环境【已完成 2026-10-15，实际命令与官方差异见下】
+
+实际执行（与官方 README 差异：手动最小集而非 patchgrid.yaml，原因见 DECISIONS D-0005；protobuf 按官方 yaml 补钉）：
 
 ```bash
-conda env create -f patchgrid.yaml
-conda activate patchgrid
+conda create -n patchgrid python=3.9 -y
 pip install https://download.pytorch.org/whl/cu111/torch-1.10.1%2Bcu111-cp39-cp39-linux_x86_64.whl
-pip install https://download.pytorch.org/whl/cu111/torchaudio-0.10.1%2Bcu111-cp39-cp39-linux_x86_64.whl
-pip install https://download.pytorch.org/whl/cu111/torchvision-0.11.2%2Bcu111-cp39-cp39-linux_x86_64.whl
+pip install https://download.pytorch.org/whl/cu111/torchvision-0.11.2%2Bcu111-cp39-cp39-linux_x86_64.whl https://download.pytorch.org/whl/cu111/torchaudio-0.10.1%2Bcu111-cp39-cp39-linux_x86_64.whl
+pip install numpy==1.22.4 scipy==1.7.1 matplotlib==3.4.3 opencv-python==4.5.4.58 scikit-image==0.18.3 trimesh==3.9.34 plyfile==0.7.4 PyYAML==6.0 tqdm open3d==0.18.0
+pip install tensorboard==2.7.0 protobuf==3.19.0 ninja
 ```
 
-### 3. 编译指标 CUDA 扩展（NGLOD）【未开始】
+### 3. 编译 CUDA 扩展【mesh2sdf 已完成 2026-10-15；sol_nglod 未编译】
+
+- 代码分析结论：训练/提取/mesh_metrics 仅需 mesh2sdf（import 链必需）；sol_nglod 仅 field_metrics/基线用，暂不编译。
+- 工具链：conda 安装 cuda-toolkit 11.8 + gcc 11（全部在 env 内，未动系统）。
+- 实际执行（差异：`install` 进 env 而非官方的 `install --user`；ARCH 用 8.6 而非官方残留的 sm_86 构建参数——语义一致）：
 
 ```bash
-cd metrics/lib/extensions
-chmod +x build_ext.sh && ./build_ext.sh
+conda install -n patchgrid -y -c nvidia/label/cuda-11.8.0 cuda-toolkit
+conda install -n patchgrid -y -c conda-forge gxx_linux-64=11 gcc_linux-64=11
+cd patch-grid/metrics/lib/extensions/mesh2sdf_cuda
+export CUDA_HOME=$CONDA_PREFIX PATH=$CUDA_HOME/bin:$PATH CC=$CONDA_PREFIX/bin/x86_64-conda-linux-gnu-gcc CXX=$CONDA_PREFIX/bin/x86_64-conda-linux-gnu-g++ CUDAHOSTCXX=$CXX TORCH_CUDA_ARCH_LIST=8.6
+python setup.py clean --all install
 ```
 
-### 4. 下载官方数据【未开始】
+### 4. 下载官方数据【阻塞：需用户手动操作】
 
-- 从官方 README 的 OneDrive 链接下载：data/train 放入 data/train；预训练解码器（shape_space/checkpoints）放入 _results/shape_space。
+- 官方 OneDrive 链接（README 中）：匿名 API 已实测不可编程下载。
+- 需要下载（浏览器）：`data/train`（3 个形状目录）与 `shape_space/checkpoints`（decoder_1.pth 等）。
+- 放置位置（相对 patch-grid/）：`patch-grid/data/train/`、`patch-grid/_results/shape_space/`。
+
+### 4a. 冒烟测试【未开始，数据到位后执行】
+
+```bash
+cd patch-grid && conda activate patchgrid
+python train.py --dataset_path data/train/00000006_0 --exp_name smoke_00000006_0 --pretrained _results/shape_space/decoder_1.pth --fix_decoder --use_shape_space --epochs 2
+# 同时另开终端 nvidia-smi 监控显存；关注：数据采样耗时、单迭代显存峰值、_results/models/smoke_00000006_0.pth 落盘
+```
 
 ### 5. 训练 Patch-Grid（固定预训练解码器）【未开始】
 

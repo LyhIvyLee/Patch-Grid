@@ -33,8 +33,35 @@
 | scikit-image 钉子 | 必须用 0.18.x：`marching_cubes_lewiner` 在新版已移除 | 代码分析（子代理报告 8） |
 | 数据获取 | OneDrive 新式分享链接匿名 API 返回 unauthenticated，无法编程下载，需用户手动下载 data/train 与 shape_space/checkpoints | curl 实测 |
 
-## 本项目实际环境（S2 搭建中，完成后更新为已验证版本清单）
+## 本项目实际环境（2026-10-15 S2 完成，全部已验证）
 
-- conda：patchgrid（Python 3.9.23）
-- torch/torchvision/torchaudio：安装中（官方 README 指定 cu111 wheel 版本）
-- 其余依赖：待 torch 完成后按官方 yaml 版本钉子安装（见 docs/DECISIONS.md D-0005）
+### 核心组件
+
+| 组件 | 版本 | 验证方式 |
+|---|---|---|
+| conda env | `patchgrid`（Python 3.9.23） | conda create |
+| torch | 1.10.1+cu111 | `torch.cuda.is_available()=True`；4096² matmul + autograd 实测通过（RTX 4050 sm_89 运行 sm_86 构建，驱动 JIT/兼容） |
+| torchvision / torchaudio | 0.11.2+cu111 / 0.10.1+cu111 | pip 安装成功 |
+| mesh2sdf 扩展 | 0.1.0（官方源码本地编译，TORCH_CUDA_ARCH_LIST=8.6） | 单位球 SDF 数值正确（球心 -0.4977、0.7 处 +0.2） |
+| nvcc / CUDA toolkit | 11.8（conda `nvidia/label/cuda-11.8.0`，装在 env 内，不动系统） | 编译扩展成功 |
+| gcc / g++ | 11（conda-forge，env 内） | 编译扩展成功 |
+
+### 关键钉子包（避免升版：与官方 yaml 一致或有兼容依据）
+
+numpy==1.22.4、scipy==1.7.1、matplotlib==3.4.3、opencv-python==4.5.4.58、scikit-image==0.18.3（`marching_cubes_lewiner` 依赖）、trimesh==3.9.34、open3d==0.18.0、plyfile==0.7.4、PyYAML==6.0、protobuf==3.19.0（tensorboard 2.7 必需）、tensorboard==2.7.0、tqdm、ninja
+
+未安装（主链路不需要，见 REPRODUCTION.md 分析）：igl/pysdf（无 cp39 linux wheel，且仅预处理死代码引用）、polysdf→polyscope、sk-video、h5py、networkx、pandas、dash 系
+
+### 使用方式（训练/提取前设置）
+
+```bash
+conda activate patchgrid
+export CUDA_HOME=$CONDA_PREFIX        # 编译扩展时需要；纯运行非必需
+```
+
+### 踩坑记录（详见当日 logs）
+
+1. torchvision 依赖解析会把 numpy 拉到 2.0.2 → 必须显式钉 numpy==1.22.4
+2. torch 1.10 cpp_extension 架构表最高 8.6：`TORCH_CUDA_ARCH_LIST=8.9` 报 Unknown arch；用 8.6（sm_86 cubin 兼容运行于 sm_89）
+3. 编译扩展需完整 cuda-toolkit（CUDAContext.h 引用 cusparse/cusolver 头，单装 cuda-nvcc 不够）
+4. tensorboard 2.7.0 必须配 protobuf==3.19.0（新版 protobuf 报 Descriptors 错误）

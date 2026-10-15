@@ -26,3 +26,10 @@
 - 决策：Kilo 全局规则位于 ~/.config/kilo/AGENTS.md；Codex 全局规则保留在 ~/.codex/AGENTS.md（既有 4 条，未改动）。两者语义兼容但不强制逐字同步；项目级规则统一由仓库根目录 AGENTS.md 承担。
 - 理由：两个工具的全局指令加载路径不同；跨项目通用偏好各有侧重，项目内行为靠项目 AGENTS.md 保证一致。
 - 状态：已采纳。
+
+## D-0005 环境搭建方式：手动最小集安装，不直接用官方 patchgrid.yaml（2026-10-15）
+
+- 决策：`conda create -n patchgrid python=3.9` 后用 pip 安装实际代码分析所得的最小依赖集 + 官方 README 指定的三个 cu111 wheel（torch 1.10.1 / torchvision 0.11.2 / torchaudio 0.10.1）。
+- 理由：官方 yaml 混用 `conda-forge/label/cf201901`、`defaults` 等旧 channel 与大量带 build string 的老包（如 openssl=3.0.0、sqlite=3.36），在现代 conda 25.5 上解析大概率失败；且其中 dash/flask/jupyter 等为可视化杂项，不属于训练主链路。按代码真实 import（torch/numpy/scipy/matplotlib/cv2/igl/open3d/skimage/trimesh/pysdf/yaml/tqdm 等）安装更可控。
+- 影响：属于环境层偏离（不修改官方代码），版本清单记录于 docs/ENVIRONMENT.md；若后续 import 报缺包再增量补装。
+- 状态：已采纳。

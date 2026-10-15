@@ -20,14 +20,21 @@
 - conda 环境名 patchgrid（由官方 patchgrid.yaml 创建）
 - 指标依赖 NGLOD 的 CUDA 扩展（需编译）
 
-## 本项目实际环境
+## S1 兼容性分析结论（2026-10-15，代码分析 + 本机检测；详见 docs/REPRODUCTION.md「代码流程分析」）
 
-- 项目 conda 环境：未创建（Phase 1 创建）。
-- CUDA 编译工具链（用于 NGLOD 扩展）：未验证。
-- 官方数据 / 预训练权重：未下载。
+| 项 | 结论 | 依据 |
+|---|---|---|
+| glibc | 2.39，满足 cu111 wheel（manylinux2014，需 ≥2.17） | `ldd --version` |
+| conda 环境 | `patchgrid`（Python 3.9.23，官方 3.9.7 的补丁版本差异，推断可接受） | `conda create -n patchgrid python=3.9` |
+| GPU 架构 | RTX 4050 为 sm_89；cu111 官方构建最高 sm_86 + PTX。**假设**：驱动 580 可 JIT PTX 到 sm_89（首次运行有编译延迟），装好后实测 | CUDA 二进制兼容规则（推断） |
+| mesh2sdf CUDA 扩展 | **训练/提取/评估均需可 import**（utils.py→torchgp→mesh2sdf 无条件导入；数值上仅 metrics 调用）；需 nvcc + 匹配 torch 的编译环境，是环境搭建最大风险点 | 代码分析（子代理报告 5.3） |
+| sol_nglod 扩展 | 仅 field/基线代码可达，训练+提取+mesh_metrics 不依赖，可不编译 | 代码分析（子代理报告 5.3） |
+| numpy 钉子 | 必须用 1.22.4（官方 yaml 值）：`np.int`（extract.py:217）与 `np.core.records`（utils.py:186）在 numpy≥1.24/2.0 会崩（前者仅 delete_info 分支） | 代码分析（子代理报告 8） |
+| scikit-image 钉子 | 必须用 0.18.x：`marching_cubes_lewiner` 在新版已移除 | 代码分析（子代理报告 8） |
+| 数据获取 | OneDrive 新式分享链接匿名 API 返回 unauthenticated，无法编程下载，需用户手动下载 data/train 与 shape_space/checkpoints | curl 实测 |
 
-## 已识别风险（推断，待 Phase 1 验证）
+## 本项目实际环境（S2 搭建中，完成后更新为已验证版本清单）
 
-1. 显存：6 GB 相对官方实验规模可能偏小，训练前先用小形状 / 低配置试运行并监控 `nvidia-smi`。
-2. 兼容性：cu111 wheel（2021 年）与 Ubuntu 24.04 的 glibc / GCC 13 默认工具链可能不兼容，尤其影响 CUDA 扩展编译；如失败，考虑降低 GCC 版本或评估新版 PyTorch（偏离需登记 docs/DEVIATIONS.md 与 docs/DECISIONS.md）。
-3. Python 3.9：conda 仍可创建，但需确认依赖解析可用。
+- conda：patchgrid（Python 3.9.23）
+- torch/torchvision/torchaudio：安装中（官方 README 指定 cu111 wheel 版本）
+- 其余依赖：待 torch 完成后按官方 yaml 版本钉子安装（见 docs/DECISIONS.md D-0005）

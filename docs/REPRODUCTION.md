@@ -76,6 +76,33 @@ python metrics/field_metrics.py --local_path _results/models/00000006_0.pth --da
 
 - 下载 data/edit 数据；先训练原始形状（--num_layers 2），再用 --update 训练更新形状，最后 extract。具体命令见官方 README「Shape updating」一节，执行时原文记录到当日日志。
 
+## 代码流程分析（S1，2026-10-15，静态分析结论，未运行验证）
+
+### 数据目录期望格式（dataset_path/<shape>/）
+
+`patches/{i}.obj`（分割好的 patch 网格）、`adaptive_resolution.json`（每 patch 特征体分辨率指数）、`merge_order_adapt.json`（CSG 合并顺序）、`redboxes_adapt.json` / `redboxes_extract.json`（merge 盒）、`bounds/box_p{pid}_r{2^res}_surface.bin` 与 `_extend.bin`（格点盒起点）、`connect_type.txt`（patch 凸凹连接）；`--open` 时另需 `bdr{i}.npy`，`--update` 时另需 `change_info.txt`。**采样在训练时现场进行**（trimesh 切盒采样 + scipy cKDTree 分配；不用 igl/pysdf/SDF 库），缓存到 `--dataset_save`（默认 data/samples）。预处理代码官方未发布（todolist.txt 证实），数据必须来自官方 OneDrive。
+
+### 训练 / 提取 / 评估要点
+
+- 训练：优化 latent codes（nn.Embedding，--fix_decoder 时 decoder 冻结）；损失 = surf(200)+normal(50)+eikonal(5)+jitter(50)+merge(400)；**1 epoch = 1 次迭代**，Patch-Grid 主路径默认 300 epochs；checkpoint 覆盖写 `_results/models/<exp>.pth`（save_every=50 触发落盘）。
+- `--use_shape_space --pretrained`：按 `<pretrained 去后缀>_latent.txt` 的数量建 codebook 严格加载 decoder 后丢弃 latent 重建（本仓库自带 decoder_1_latent.txt=21415、decoder_2_latent.txt=12151）。decoder 结构参数（hidden_dim/emb_deg/num_layers/activation）必须与 ckpt 一致。
+- 提取：`skimage.measure.marching_cubes_lewiner` 逐 merge 盒 MC + CSG 组合 → `<prefix>/<exp>_composed_all.obj`；`--extract_resolution` 默认 2^11、`--extract_batch_size` 默认 80 万。
+- 评估：mesh_metrics 用 trimesh + mesh2sdf(CUDA)；field_metrics 有既存 import 缺陷（`from option import parse_options`，仓库无该模块）需最小修补。
+
+### 官方代码既存缺陷（非本机适配引入）
+
+1. `example.sh` 用 `--mile_stones`（复数），argparse 定义为 `--mile_stone`，直接跑会报 unrecognized argument（README 命令正确）。
+2. `metrics/field_metrics.py:9` `from option import parse_options` 必然 ImportError。
+3. `extract.py:217` `np.int` 仅在存在 `delete_info.txt` 时触发（numpy≥1.24 移除）；用 numpy 1.22.4 可回避。
+4. trainer 最终保存条件 `epoch == args.epochs` 恒为假（epochs 已 +1），实际靠 `save_every` 落盘。
+
+### 环境风险与对策（6GB 显存）
+
+- **mesh2sdf CUDA 扩展必须可 import**（utils→torchgp 无条件导入）→ 需在本环境编译：nvcc（conda 安装，不动系统）+ gcc≤11（conda-forge 编译器）+ TORCH_CUDA_ARCH_LIST=8.9。
+- sol_nglod 扩展不编译（不影响训练+提取+mesh_metrics）。
+- 显存推断：默认配置单形状拟合峰值 <1GB，充足；采样阶段 CPU 内存约 500 万点数组；提取时浅层大盒可能逼近上限 → 必要时调小 `--extract_batch_size` / `--extract_resolution`。
+- 冒烟测试计划：epochs=2 跑通数据加载/前向/反向/存 ckpt，同时监控 nvidia-smi。
+
 ## 与论文的数值对照
 
 - 待精读论文后补充各表格参考值（避免凭记忆填错）。

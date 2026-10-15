@@ -1,0 +1,42 @@
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*.egg-info/
+.ipynb_checkpoints/
+
+# ===== 虚拟环境 =====
+.venv/
+venv/
+env/
+
+# ===== 数据与实验产物（大文件不入库，见 docs/DECISIONS.md D-0002）=====
+data/
+_results/
+runs/
+wandb/
+lightning_logs/
+*.pth
+*.pth.tar
+*.ckpt
+*.safetensors
+*.onnx
+*.log
+
+# ===== 系统 / 编辑器 =====
+.DS_Store
+Thumbs.db
+*.swp
+
+# ===== 敏感信息 =====
+.env
+.env.*
+*.pem
+*_credentials*
+secrets/
+
+# ===== 临时文件 =====
+tmp/
+*.tmp
+
+# 说明：.kilo/ 下的项目配置（commands/agents 等）可入库以便跨机器与跨工具同步；
+# 其内部 .gitignore 已排除 agent-manager.json 等会话状态，无需在此重复排除。

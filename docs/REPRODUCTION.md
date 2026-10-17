@@ -74,11 +74,13 @@ python train.py --dataset_path data/train/00000006_0 --exp_name 00000006_0_ss --
 
 - 结果：301 iters / 13.4s；损失 patch 57.9→0.242；`_results/models/00000006_0_ss.pth`（648,705 参数）。
 
-### 6. 训练 Patch-Grid-TS（从头训练）【未开始】
+### 6. 训练 Patch-Grid-TS（从头训练）【已完成 2026-10-17】
 
 ```bash
-python train.py --dataset_path data/train/00000006_0 --exp_name 00000006_0 --epochs 500 --mile_stone 470 485
+python train.py --dataset_path data/train/00000006_0 --exp_name 00000006_0_no_ss --epochs 500 --mile_stone 470 485
 ```
+
+- 结果：cd 6.087e-05 / hd 8.410e-04 / iou 0.99904 / nc 0.99917 / f_score 100.0（CD 略优于 ss 路径）。
 
 ### 7. 网格抽取【已完成 2026-10-15，含资源适配】
 
@@ -96,11 +98,12 @@ python metrics/mesh_metrics.py --gt_path data/train/00000006_0/00000006_0.obj --
 ```
 
 - 结果（原文）：cd 7.198e-05 / hd 8.499e-04 / iou 0.99904 / nc 0.99920 / f_score 100.0。
-- 注意：metrics 需要 `rtree==0.9.7`（yaml 钉子）；field_metrics 需先修补官方 import 缺陷（见「官方代码既存缺陷」第 2 条）。
+- 2026-10-17 补充：00000008_0 与 00000089_1 同流程完成（指标见 docs/logs/2026-10-17.md 表格）。
+- field_metrics 已于 2026-10-17 完成修补并运行（DEVIATIONS #1）：field error 0.002938 / sharp feature error 9.022e-05（00000006_0）。
 
-### 9. 形状更新（shape updating）【未开始】
+### 9. 形状更新（shape updating）【已完成 2026-10-17】
 
-- 下载 data/edit 数据；先训练原始形状（--num_layers 2），再用 --update 训练更新形状，最后 extract。具体命令见官方 README「Shape updating」一节，执行时原文记录到当日日志。
+官方 README 三步（decoder_2.pth，--num_layers 2）：243_ori 训练（300 epochs）→ 243_round `--update` 训练（80 epochs，loss 1.14→0.70）→ extract（+资源适配参数）→ `_results/mesh/243_round_update_composed_all.obj`（349MB）。对比图 `compare_243_round_update.png`；RECON 与 GT 包围盒偏差 0.069（待归因，疑与 scale_trans.json 相关，见 STATUS.md 研究假设）。
 
 ## 代码流程分析（S1，2026-10-15，静态分析结论，未运行验证）
 

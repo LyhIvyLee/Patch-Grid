@@ -65,3 +65,4 @@ export CUDA_HOME=$CONDA_PREFIX        # 编译扩展时需要；纯运行非必�
 2. torch 1.10 cpp_extension 架构表最高 8.6：`TORCH_CUDA_ARCH_LIST=8.9` 报 Unknown arch；用 8.6（sm_86 cubin 兼容运行于 sm_89）
 3. 编译扩展需完整 cuda-toolkit（CUDAContext.h 引用 cusparse/cusolver 头，单装 cuda-nvcc 不够）
 4. tensorboard 2.7.0 必须配 protobuf==3.19.0（新版 protobuf 报 Descriptors 错误）
+5. **系统 RAM 是比 GPU 更先触及的约束（事故记录）**：extract 默认分辨率 2^11 时，CPU 端拼接需载入全部 MC 分块（3127 个 / 734MB 文本，Python 对象膨胀约 5–10×），叠加系统常驻进程后 15GB RAM 耗尽，OOM killer 于 17:31 杀死 VSCode（当日会话闪退根因，journalctl 确认）。**本机约束：提取分辨率用 2^10、`--extract_batch_size 50000`**；如需 2^11 以上分辨率，必须先确认可用 RAM 并关闭其他大内存进程。

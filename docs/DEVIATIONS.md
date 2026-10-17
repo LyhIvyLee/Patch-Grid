@@ -12,7 +12,7 @@
 
 | # | 日期 | 文件 | 修改内容 | 原因 | 验证方式 |
 |---|------|------|----------|------|----------|
-| — | — | — | （暂无修改） | — | — |
+| 1 | 2026-10-17 | metrics/field_metrics.py:9 | `from option import parse_options` → `from configs.option import parse_options` | 官方既存缺陷：仓库无 metrics/option.py，原 import 必然 ImportError；extract.py 对同一函数使用的就是 configs.option 路径 | field_metrics 实际运行通过（见 logs/2026-10-17） |
 
 ## 说明
 

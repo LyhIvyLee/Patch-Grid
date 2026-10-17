@@ -6,7 +6,7 @@ import torch
 import numpy as np
 import trimesh 
 
-from option import parse_options
+from configs.option import parse_options
 from utils import read_json, get_num_patches, sample_pts_in_merge_grids
 from nets.OctreeSDF import OctreeSDF
 from extraction.extractutils import get_predefined_redbox

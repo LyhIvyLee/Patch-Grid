@@ -132,9 +132,31 @@ python metrics/mesh_metrics.py --gt_path data/train/00000006_0/00000006_0.obj --
 - 显存推断：默认配置单形状拟合峰值 <1GB，充足；采样阶段 CPU 内存约 500 万点数组；提取时浅层大盒可能逼近上限 → 必要时调小 `--extract_batch_size` / `--extract_resolution`。
 - 冒烟测试计划：epochs=2 跑通数据加载/前向/反向/存 ckpt，同时监控 nvidia-smi。
 
-## 与论文的数值对照
+## 与论文的数值对照（2026-10-17 提取，arXiv 2308.13934）
 
-- 待精读论文后补充各表格参考值（避免凭记忆填错）。
+### Table 1 对照：表面拟合（本机 3 形状 vs 论文 100 形状平均）
+
+| 指标（单位见论文） | 论文 Patch-Grid | 本机复现（3 形状均值） | 论文 Patch-Grid-TS | 本机 TS（00000006_0） |
+|---|---|---|---|---|
+| CD（×10⁻⁴） | 1.00 | 0.75（0.72/0.79/0.73） | 0.93 | 0.61 |
+| HD（×10⁻³） | 2.47 | 1.42（0.85/1.36/2.06） | 2.70 | 0.84 |
+| F-score（CD<0.001） | 99.78 | ≈100（100/99.99/99.94） | 99.71 | 100.0 |
+| IoU（%） | 99.61 | 99.66 | 99.54 | 99.90 |
+| NC（%） | 99.83 | 99.76 | 99.70 | 99.92 |
+| SFE（×10⁻⁵） | 9.89 | 9.02（单形状实测） | 8.87 | — |
+| Time（s） | 5.44（RTX 4090） | 13.4（RTX 4050） | 9.81 | ~22 |
+
+结论：全部指标同量级且接近，差异方向与「3 形状样本 vs 100 形状平均」「笔记本 vs 桌面 GPU」相符。**判定复现与论文一致。**
+
+### Table 3 对照：shape update（本机未能完成官方口径计算）
+
+- 论文：CD 1.59×10⁻⁴、HD 5.35×10⁻³、F-score 99.23、IoU 99.17、NC 99.86、Time 1.52s。
+- 本机：流程跑通（80 epochs 更新训练 + 349MB 重建 + 对比图），但 mesh_metrics 对 833 万面重建网格的计算连续三次触发系统 RAM OOM（833→50 万面简化 + 15 万采样 + 持久化进程三轮适配均失败，见 logs/2026-10-17）。
+- 补齐方式（可选）：关闭 Chrome 等大内存应用后运行：
+
+```bash
+python metrics/mesh_metrics.py --gt_path data/edit/243_round/243_round.obj --recon_path _results/mesh/243_round_update_composed_all_simp500k.obj --metrics_file _results/metrics_243_round_update.txt --sample_pts 150000
+```
 
 ## 已知问题
 

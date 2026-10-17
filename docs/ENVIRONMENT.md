@@ -65,4 +65,9 @@ export CUDA_HOME=$CONDA_PREFIX        # 编译扩展时需要；纯运行非必�
 2. torch 1.10 cpp_extension 架构表最高 8.6：`TORCH_CUDA_ARCH_LIST=8.9` 报 Unknown arch；用 8.6（sm_86 cubin 兼容运行于 sm_89）
 3. 编译扩展需完整 cuda-toolkit（CUDAContext.h 引用 cusparse/cusolver 头，单装 cuda-nvcc 不够）
 4. tensorboard 2.7.0 必须配 protobuf==3.19.0（新版 protobuf 报 Descriptors 错误）
-5. **系统 RAM 是比 GPU 更先触及的约束（事故记录）**：extract 默认分辨率 2^11 时，CPU 端拼接需载入全部 MC 分块（3127 个 / 734MB 文本，Python 对象膨胀约 5–10×），叠加系统常驻进程后 15GB RAM 耗尽，OOM killer 于 17:31 杀死 VSCode（当日会话闪退根因，journalctl 确认）。**本机约束：提取分辨率用 2^10、`--extract_batch_size 50000`**；如需 2^11 以上分辨率，必须先确认可用 RAM 并关闭其他大内存进程。
+5. **系统 RAM 是比 GPU 更先触及的约束（三次事故记录，均经 journalctl `oom-kill` 确认）**：
+   - 10-15 17:31：extract 默认 2^11 分辨率，CPU 拼接载入 3127 个分块（734MB 文本，Python 膨胀 5–10×）→ 15GB 耗尽，VSCode 被杀。
+   - 10-17 14:22：mesh_metrics 对 833 万面重建网格建 rtree 索引（数 GB）+ 系统常驻 → VSCode 被杀。
+   - 10-17 14:29：VSCode 重启恢复期内存峰值 + metrics 载入 50 万面网格 → 再次被杀（余量被连续大进程叠加耗尽）。
+   - **根因**：15GB 总内存，Chrome+VSCode 常驻 ~9GB，重型 Python 任务真实余量 ~5GB；官方实现的网格载入/邻近查询是纯 CPU 实现（不受益于 GPU）。
+   - **本机约束与缓解**：提取分辨率 ≤2^10、批次 5 万；超 50 万面网格先 simplify_quadric_decimation 再跑指标（简化误差 ≪ 指标阈值）；指标采样点可降至 15 万；重型 metrics 用持久化后台进程跑（避免宿主崩溃连坐）；跑重任务时避免同时开新的大型应用。

@@ -1,7 +1,7 @@
-# 周报 · 2026 年第 42 周（10-12 ~ 10-18）
+# 周报 Week1 (10.12 ~ 10.18)
 
-> 项目：PatchGrid 复现与 CAD 生成研究（详见 docs/PROJECT_CONTEXT.md）
-> 撰写：2026-10-17（本周实际工作日：10-15、10-17）
+> 项目：PatchGrid 复现与 CAD 生成研究（详见 docs/PROJECT_CONTEXT.md）\
+> 撰写：2026.10.17\
 > 状态：Phase 1 官方复现已完成；自本周起暂停本机复现类任务（硬件限制，见「风险与限制」）
 
 ## 一、本周概述
@@ -10,18 +10,18 @@
 
 ## 二、主要进展
 
-### 1. 项目基建（Phase 0，10-15）
+### 1. 项目基建（Phase 0，10.15）
 
 - 建立全局 Agent 规范（~/.config/kilo/AGENTS.md，7 节 23 条）与项目级规范（AGENTS.md），Kilo/Codex 双工具共用。
 - 建立 docs/ 科研记录体系：PROJECT_CONTEXT / STATUS / DECISIONS / ENVIRONMENT / REPRODUCTION / DEVIATIONS / logs；GitHub 私有仓库同步（LyhIvyLee/Patch-Grid），跨对话、跨模型可无缝衔接上下文。
 
-### 2. 环境搭建与兼容性攻坚（Phase 1 S1/S2，10-15）
+### 2. 环境搭建与兼容性攻坚（Phase 1 S1/S2，10.15）
 
 - 官方代码纳入版本管理（patch-grid/，基线 commit cdd97d9），完成全流程静态分析（数据格式、训练循环、提取与评估管线、官方代码 4 处既存缺陷定位）。
 - 在 Ubuntu 24.04 上复原官方 2021 年环境栈：Python 3.9 + PyTorch 1.10.1+cu111，实测 cu111 构建（最高 sm_86）在 RTX 4050（sm_89）上经驱动兼容正常运行。
 - 编译 mesh2sdf CUDA 扩展（训练导入链硬依赖，README 未完整说明）：conda 内 nvcc 11.8 + gcc 11 + TORCH_CUDA_ARCH_LIST=8.6 配方成功，kernel 数值验证正确。
 
-### 3. 官方复现核心实验（Phase 1 S3/S4，10-15 ~ 10-17）
+### 3. 官方复现核心实验（Phase 1 S3/S4，10.15 ~ 10.17）
 
 | 实验 | 结果 |
 |---|---|
@@ -30,7 +30,7 @@
 | field_metrics（修补官方 import 缺陷后） | 成功，field error 0.00294 |
 | shape updating（243_ori → 243_round 局部更新 80 epochs → 349MB 重建） | 流程成功，指标计算受本机内存限制终止（见四） |
 
-### 4. 论文数值对照（10-17）
+### 4. 论文数值对照（10.17）
 
 | 指标 | 论文（100 形状均值） | 本机（3 形状均值） |
 |---|---|---|

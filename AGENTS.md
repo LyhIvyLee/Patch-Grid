@@ -17,7 +17,7 @@
 | AGENTS.md | 项目级 Agent 规则（本文件） |
 | docs/ | 科研记录：背景、状态、决策、环境、复现、差异、日志 |
 | docs/logs/ | 按日期维护的科研日志（YYYY-MM-DD.md） |
-| docs/reports/ | 周报（YYYY-MM-DD.md，撰写日命名），每周最后一个工作日更新 |
+| docs/reports/ | 周报（weekly-report-YYYY-MM-DD.md，撰写日命名），每周最后一个工作日更新 |
 | patch-grid/ | 官方代码副本（Phase 1 克隆，纳入版本管理） |
 | data/ | 训练/测试数据（不入库） |
 | _results/ | 实验输出与权重（不入库） |

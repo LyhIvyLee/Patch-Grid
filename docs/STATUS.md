@@ -4,7 +4,7 @@
 
 ## 当前阶段
 
-Phase 1 复现：**核心流程全部完成**——3 个官方形状 ss 路径、TS 从头训练路径、field_metrics、shape updating 均在本机跑通，且复现指标与论文 Table 1 对照一致（见 docs/reports/2026-10-17.md）。
+Phase 1 复现：**核心流程全部完成**——3 个官方形状 ss 路径、TS 从头训练路径、field_metrics、shape updating 均在本机跑通，且复现指标与论文 Table 1 对照一致（见 docs/reports/weekly-report-2026-10-17.md）。
 **自 2026-10-17 起暂停本机复现/训练类任务（用户决定：本机 15GB 内存不足，4 次 OOM 事故记录见 ENVIRONMENT.md），后续以文档/阅读/分析类工作为主。**
 
 ## 已完成

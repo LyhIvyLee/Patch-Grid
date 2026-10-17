@@ -15,6 +15,9 @@ _results/
 runs/
 wandb/
 lightning_logs/
+build/
+dist/
+*.egg-info/
 *.pth
 *.pth.tar
 *.ckpt

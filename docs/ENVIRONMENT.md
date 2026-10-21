@@ -43,6 +43,8 @@
 | torch | 1.10.1+cu111 | `torch.cuda.is_available()=True`；4096² matmul + autograd 实测通过（RTX 4050 sm_89 运行 sm_86 构建，驱动 JIT/兼容） |
 | torchvision / torchaudio | 0.11.2+cu111 / 0.10.1+cu111 | pip 安装成功 |
 | mesh2sdf 扩展 | 0.1.0（官方源码本地编译，TORCH_CUDA_ARCH_LIST=8.6） | 单位球 SDF 数值正确（球心 -0.4977、0.7 处 +0.2） |
+
+> **服务器迁移提醒**：`TORCH_CUDA_ARCH_LIST=8.6` 是针对本机 RTX 4050（sm_89，兼容运行 sm_86 cubin）的选择。在服务器上重编译前，先用 `python -c "import torch; print(torch.cuda.get_device_capability(0))"` 查目标 GPU 架构并取不超过 torch 1.10 支持上限（8.6）的对应值：V100=7.0、A100=8.0、30 系=8.6；40/50 系（sm_89+）沿用 8.6（二进制兼容）。
 | nvcc / CUDA toolkit | 11.8（conda `nvidia/label/cuda-11.8.0`，装在 env 内，不动系统） | 编译扩展成功 |
 | gcc / g++ | 11（conda-forge，env 内） | 编译扩展成功 |
 
